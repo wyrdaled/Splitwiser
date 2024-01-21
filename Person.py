@@ -17,3 +17,6 @@ class Person(object):
 
     def set_last_name(self, last_name):
         self.last_name = last_name
+
+    def __str__(self):
+        return self.first_name
