@@ -10,12 +10,19 @@ class Expense(object):
         self.spliters = spliters if spliters else [payer]
         self.category = None
         self.location = location
+        self.spliters = spliters # This spliters is a list of Person object's id
 
     def set_payer(self, payer):
         self.payer = payer
 
     def set_value(self, value):
         self.value = value
+
+    def set_spliters(self, spliters):
+        self.spliters = spliters
+
+    def add_spliters(self, spliters):
+        self.spliters.extend(spliters)
 
     def calculate_split(self):
         #Function for actually caluclate the split, returns a dict {(debtors, payer) : value}, for now, value is always positive
@@ -30,3 +37,21 @@ class Expense(object):
         if self.location != "":
             description_str = description_str + " Spent at %s" % self.location
         return description_str
+    
+    @classmethod
+    def from_dict(cls, input_dict):
+        new_expense = cls.__init__(input_dict["value"], input_dict["date"], input_dict["payer"], input_dict["number_of_spliters"])
+        for k in ["spliters", "location"]:
+            if k in input_dict:
+                setattr(new_expense, k, input_dict[k])
+                        
+        return new_expense
+
+    def convert_to_dict(self):
+        output_dict = {k:getattr(self, k) for k in ["value", "date", "payer", "number_of_spliters", "spliters", "location"] if getattr(self, k) is not None}
+        if "date" in output_dict: output_dict.update({"date":str(self.date)}) #Change date to correct format
+        if "spliters" in output_dict:
+            spliter_str = '+'.join(self.spliters)
+            output_dict.update({"spliters":spliter_str})
+
+        return output_dict
