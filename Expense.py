@@ -40,7 +40,7 @@ class Expense(object):
     
     @classmethod
     def from_dict(cls, input_dict):
-        new_expense = cls.__init__(input_dict["value"], input_dict["date"], input_dict["payer"], input_dict["number_of_spliters"])
+        new_expense = cls(input_dict["value"], input_dict["date"], input_dict["payer"], input_dict["number_of_spliters"])
         for k in ["spliters", "location"]:
             if k in input_dict:
                 setattr(new_expense, k, input_dict[k])
@@ -48,7 +48,7 @@ class Expense(object):
         return new_expense
 
     def convert_to_dict(self):
-        output_dict = {k:getattr(self, k) for k in ["value", "date", "payer", "number_of_spliters", "spliters", "location"] if getattr(self, k) is not None}
+        output_dict = {k:getattr(self, k) for k in ["value", "date", "payer", "number_of_spliters", "spliters", "location"] if getattr(self, k, None) is not None}
         if "date" in output_dict: output_dict.update({"date":str(self.date)}) #Change date to correct format
         if "spliters" in output_dict:
             spliter_str = '+'.join(self.spliters)

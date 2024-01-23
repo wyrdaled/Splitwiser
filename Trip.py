@@ -3,6 +3,9 @@ from Expense import Expense
 from datetime import date, timedelta
 from collections import defaultdict
 import csv
+import pathlib
+import os, sys
+import json
 
 
 class DateError(Exception):
@@ -10,14 +13,14 @@ class DateError(Exception):
 
 class Trip(object):
 
-    def __init__(self, start_date, length = 1) -> None:
+    def __init__(self, start_date, length = 1, end_date = None) -> None:
         self.start_date = start_date #datetime.date object
         self.length = length #datetime.timedelta object
-        self.end_date = None #datetime.date object
+        self.end_date = end_date #datetime.date object
         self.total_expense = 0
         self.number_of_people = 0
         self.expenses = []
-        self.trip_master = None
+        self.trip_master = None #Should be specified with 
         self.people = {}
         self.description = None
         self.destination = None
@@ -117,3 +120,47 @@ class Trip(object):
                     expense_dict["spliters"] = expense_dict["spliters"].split("+")
                 new_expense = Expense.from_dict(expense_dict)
                 self.expenses.append(new_expense)
+
+    def save_trip(self, trip_path = None):
+        if trip_path is None: trip_path = str(self)
+        trip_path = os.path.abaspath(trip_path)
+        trip_path = pathlib.Path(trip_path)
+        trip_path.mkdir()
+        people_csv_path = os.path.join(trip_path, "people.csv")
+        expense_csv_path = os.path.join(trip_path, "expense.csv")
+        info_dict = {k: getattr(self, k) for k in \
+                     ["start_date", "end_date", "length", "total_expense", "number_of_people", "trip_master", "description", "destination", "splite_table", "duplicate_count"] \
+                     if getattr(self, k, None) is not None}
+        if "start_date" in info_dict: info_dict["start_date"] = str(info_dict["start_date"])
+        if "end_date" in info_dict: info_dict["end_date"] = str(info_dict["end_date"])
+        info_dict_path = os.path.join(trip_path, "info_dict.json")
+        with open(info_dict_path, "w") as info_dict_file:
+            json.dump(info_dict, info_dict_file)
+        self.save_people_to_csv(people_csv_path)
+        self.save_expense_to_csv(expense_csv_path)
+    
+    @classmethod
+    def load_trip(cls, trip_path):
+        trip_path = os.path.abspath(trip_path)
+        #TODO: check if trip path exists
+        info_dict = json.load(os.path.join(trip_path, "info_dict.json"))
+        start_date = date.fromisoformat(info_dict["start_date"])
+        end_date = date.fromisoformat(info_dict["end_date"]) if info_dict["end_date"] else start_date + info_dict["length"]
+        new_trip = cls(start_date, end_date = end_date)
+        new_trip.length = (end_date - start_date).days
+        for attr in ["total_expense", "number_of_people", "trip_master", "description", "destination", "splite_table", "duplicate_count"]:
+            if attr in info_dict: setattr(new_trip, attr)
+        people_csv_path = os.path.join(trip_path, "people.csv")
+        expense_csv_path = os.path.join(trip_path, "expense.csv")
+        new_trip.expenses = new_trip.load_expense_from_csv(expense_csv_path)
+        new_trip.people = new_trip.load_people_from_csv(people_csv_path)
+        return new_trip
+        
+    def __str__(self):
+        start_date_str = str(self.start_date)
+        end_date_str = str(self.end_date)
+        ret_str = start_date_str + "_to_" + end_date_str + "_trip"
+        if self.destination: ret_str = ret_str + "_to_" + self.destination
+        if self.number_of_people: ret_str = ret_str + "_for_" + str(self.number_of_people) + "_people"
+        return ret_str
+    

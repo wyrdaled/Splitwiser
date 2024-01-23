@@ -22,14 +22,14 @@ class Person(object):
 
     @classmethod
     def from_dict(cls, input_dict):
-        new_person = cls.__init__(input_dict["last_name"], input_dict["first_name"])
+        new_person = cls(input_dict["last_name"], input_dict["first_name"])
         for k in ["sex", "age", "id"]:
             if k in input_dict:
                 setattr(new_person, k, input_dict[k])
         return new_person
 
     def convert_to_dict(self):
-        output_dict = {k:getattr(self, k) for k in ["last_name", "first_name", "sex", "age", "id"] if getattr(self, k) is not None}
+        output_dict = {k:getattr(self, k) for k in ["last_name", "first_name", "sex", "age", "id"] if getattr(self, k, None) is not None}
         return output_dict
 
     def __str__(self):
