@@ -7,8 +7,11 @@ class Person(object):
         self.first_name = first_name
         self.sex = sex
         self.age = age
-        if id is None:
-            self.id = first_name + "_" + last_name
+        self.id = id
+
+    @classmethod
+    def get_csv_header(cls):
+        return ["last_name", "first_name", "sex", "age", "id"]
         
     def set_name(self, first_name, last_name):
         self.set_first_name(first_name)

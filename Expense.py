@@ -2,15 +2,22 @@ from datetime import date
 
 class Expense(object):
 
-    def __init__(self, value, date, payer, number_of_spliters = 1, spliters = [], location = "") -> None:
+    def __init__(self, value, expense_date, payer, number_of_spliters = 1, spliters = [], location = "") -> None:
         self.value = value
-        self.date = date
+        self.expense_date = expense_date
         self.payer = payer
         self.number_of_spliters = number_of_spliters
         self.spliters = spliters if spliters else [payer]
         self.category = None
         self.location = location
         self.spliters = spliters # This spliters is a list of Person object's id
+
+    @classmethod
+    def get_csv_header(cls):
+        return ["value", "expense_date", "payer", "number_of_spliters", "spliters", "location"]
+    
+    def set_date(self, date):
+        self.expense_date = date.fromisoformat(date)
 
     def set_payer(self, payer):
         self.payer = payer
@@ -40,7 +47,7 @@ class Expense(object):
     
     @classmethod
     def from_dict(cls, input_dict):
-        new_expense = cls(input_dict["value"], input_dict["date"], input_dict["payer"], input_dict["number_of_spliters"])
+        new_expense = cls(input_dict["value"], input_dict["expense_date"], input_dict["payer"], input_dict["number_of_spliters"])
         for k in ["spliters", "location"]:
             if k in input_dict:
                 setattr(new_expense, k, input_dict[k])
@@ -48,8 +55,8 @@ class Expense(object):
         return new_expense
 
     def convert_to_dict(self):
-        output_dict = {k:getattr(self, k) for k in ["value", "date", "payer", "number_of_spliters", "spliters", "location"] if getattr(self, k, None) is not None}
-        if "date" in output_dict: output_dict.update({"date":str(self.date)}) #Change date to correct format
+        output_dict = {k:getattr(self, k) for k in ["value", "expense_date", "payer", "number_of_spliters", "spliters", "location"] if getattr(self, k, None) is not None}
+        if "expense_date" in output_dict: output_dict.update({"expense_date":str(self.expense_date)}) #Change date to correct format
         if "spliters" in output_dict:
             spliter_str = '+'.join(self.spliters)
             output_dict.update({"spliters":spliter_str})
