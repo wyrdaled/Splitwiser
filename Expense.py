@@ -90,6 +90,10 @@ class Expense(object):
         for k in ["spliters", "location"]:
             if k in input_dict:
                 setattr(new_expense, k, input_dict[k])
+        if getattr(new_expense, "value", None) is not None:
+            setattr(new_expense, "value", float(getattr(new_expense, "value")))
+        if getattr(new_expense, "number_of_spliters", None) is not None:
+            setattr(new_expense, "number_of_spliters", int(getattr(new_expense, "number_of_spliters")))
         if isinstance(new_expense.spliters, str):
             new_expense.spliters = new_expense.spliters.split("+")
                         
