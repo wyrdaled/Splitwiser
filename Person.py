@@ -32,7 +32,7 @@ class Person(object):
         return new_person
 
     def convert_to_dict(self):
-        output_dict = {k:getattr(self, k) for k in ["last_name", "first_name", "sex", "age", "id"] if getattr(self, k, None) is not None}
+        output_dict = {k:getattr(self, k) for k in Person.get_csv_header() if getattr(self, k, None) is not None}
         return output_dict
 
     def __str__(self):

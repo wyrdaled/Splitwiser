@@ -11,6 +11,9 @@ import json
 class DateError(Exception):
     pass
 
+class PersonError(Exception):
+    pass
+
 class Trip(object):
 
     def __init__(self, start_date, length = None, end_date = None) -> None:
@@ -19,28 +22,33 @@ class Trip(object):
         self.end_date = end_date #datetime.date object
         self.total_expense = 0
         self.number_of_people = 0
-        self.expenses = []
+        self.expenses = {}
         self.trip_master = None #Should be specified with Person.id
         self.people = {}
         self.description = None
         self.destination = None
         self.split_table = defaultdict(int)
         self.duplicate_count = defaultdict(int) # Used incase two people have identical first and last name
+        self.expense_count = defaultdict(int) #Used to give expense auto generated IDs
         self.save_path = None
         self.set_date(start_date, end_date = end_date, length = length)
 
     def add_person(self, last_name, first_name, age = None, sex = None, id = None):
-        if id is None: id = last_name + "_" + first_name + str(self.duplicate_count[last_name + "_" + first_name] + 1)
+        if id is not None and id in self.people:
+            print("Two people cannot have identical IDs, please specify unused ID")
+        if id is None: id = last_name + "_" + first_name + "_" + str(self.duplicate_count[last_name + "_" + first_name] + 1)
         new_person = Person(last_name, first_name, age = age, sex = sex, id = id)
         self.people.update({id:new_person})
         self.number_of_people = self.number_of_people + 1
-        if self.number_of_people == 1: self.trip_master = id
+        if self.trip_master is None: self.trip_master = id
         return new_person
 
     def set_trip_master(self, trip_master):
-        self.trip_master = trip_master
+        if trip_master not in self.people:
+            raise PersonError("Person %s is not in this trip")
+        self.trip_master = trip_master #trip master should be person's id
 
-    def add_expense(self, value, expense_date = None, payer = None, number_of_spliters = 1, spliters = []):
+    def add_expense(self, value, expense_date = None, payer = None, number_of_spliters = 1, spliters = [], id = None):
         if value < 0:
             raise ValueError("Expense must has value larger than 0")
         expense_date = date.today() if expense_date is None else date.fromisoformat(expense_date)
@@ -48,9 +56,16 @@ class Trip(object):
             raise DateError("Expense date is not within the trip")
         if spliters and len(spliters) != number_of_spliters:
             raise ValueError("Number of spliters of this expense does not match the number of people")
+        for spliter in spliters:
+            if spliter not in self.people:
+                raise PersonError("Unrecognized person id: %s" % spliter)
+        if id is None:
+            id = str(expense_date) + "_" + str(self.expense_count[str(expense_date)] + 1)
         payer = self.trip_master if payer is None else payer
-        new_expense = Expense(value, expense_date, payer, number_of_spliters = number_of_spliters, spliters = spliters)
-        self.expenses.append(new_expense)
+        if payer not in self.people:
+            raise PersonError("Payer %s is not a person in this trip" % payer)
+        new_expense = Expense(value, expense_date, payer, number_of_spliters = number_of_spliters, spliters = spliters, id = id, trip = self)
+        self.expenses.update({new_expense.id:new_expense})
         return new_expense
 
     def set_date(self, start_date, end_date = None, length = None): #Input start date and end_date and/or length by str, convert them to date object
@@ -75,7 +90,7 @@ class Trip(object):
         self.length = length
 
     def calculate_trip_split(self):
-        for expense in self.expenses:
+        for expense in self.expenses.values():
             expense_split_dict = expense.calculate_split()
             for k in expense_split_dict.keys():
                 self.split_table[k] = self.split_table[k] + expense_split_dict[k]
@@ -89,6 +104,7 @@ class Trip(object):
         self.destination = destination
 
     def show_split(self):
+        self.calculate_trip_split()
         print(self.split_table)
            
     def save_people_to_csv(self, people_csv_path):
@@ -112,8 +128,8 @@ class Trip(object):
             headers = Expense.get_csv_header()
             csv_writer = csv.DictWriter(expense_csv, headers)
             csv_writer.writeheader()
-            for expense in self.expenses:
-                expense_dict = expense.convert_to_dict()
+            for expense_id in self.expenses:
+                expense_dict = self.expenses[expense_id].convert_to_dict()
                 csv_writer.writerow(expense_dict)
 
     def load_expense_from_csv(self, expense_csv_path):
@@ -125,7 +141,8 @@ class Trip(object):
                 if "spliters" in expense_dict:
                     expense_dict["spliters"] = expense_dict["spliters"].split("+")
                 new_expense = Expense.from_dict(expense_dict)
-                self.expenses.append(new_expense)
+                new_expense.trip = self
+                self.expenses.update({new_expense.id:new_expense})
 
     def save_trip(self, trip_path = None):
         if trip_path is None: trip_path = str(self)
@@ -135,7 +152,8 @@ class Trip(object):
         people_csv_path = os.path.join(trip_path, "people.csv")
         expense_csv_path = os.path.join(trip_path, "expense.csv")
         info_dict = {k: getattr(self, k) for k in \
-                     ["start_date", "end_date", "length", "total_expense", "number_of_people", "trip_master", "description", "destination", "splite_table", "duplicate_count"] \
+                     ["start_date", "end_date", "length", "total_expense", "number_of_people", "trip_master",\
+                      "description", "destination", "splite_table", "duplicate_count", "expense_count"] \
                      if getattr(self, k, None) is not None}
         if "start_date" in info_dict: info_dict["start_date"] = str(info_dict["start_date"])
         if "end_date" in info_dict: info_dict["end_date"] = str(info_dict["end_date"])
@@ -160,7 +178,7 @@ class Trip(object):
         end_date = date.fromisoformat(info_dict["end_date"]) if info_dict["end_date"] else (start_date + timedelta(info_dict["length"]))
         new_trip = cls(start_date, end_date = end_date)
         new_trip.length = (end_date - start_date).days
-        for attr in ["total_expense", "number_of_people", "trip_master", "description", "destination", "splite_table", "duplicate_count"]:
+        for attr in ["total_expense", "number_of_people", "trip_master", "description", "destination", "splite_table", "duplicate_count", "expense_count"]:
             if attr in info_dict: setattr(new_trip, attr, info_dict[attr])
         people_csv_path = os.path.join(trip_path, "people.csv")
         expense_csv_path = os.path.join(trip_path, "expense.csv")
