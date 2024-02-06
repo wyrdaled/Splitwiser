@@ -1,5 +1,5 @@
 from Person import Person
-from Expense import Expense
+from Expense import Expense, PersonError
 from datetime import date, timedelta
 from collections import defaultdict
 import csv
@@ -9,9 +9,6 @@ import json
 
 
 class DateError(Exception):
-    pass
-
-class PersonError(Exception):
     pass
 
 class Trip(object):
