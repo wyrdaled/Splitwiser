@@ -13,7 +13,8 @@ class DateError(Exception):
 
 class Trip(object):
 
-    def __init__(self, start_date, length = None, end_date = None) -> None:
+    def __init__(self, trip_name, start_date, length = None, end_date = None, destination = None) -> None:
+        self.trip_name = trip_name
         self.start_date = start_date #datetime.date object
         self.length = length #datetime.timedelta object
         self.end_date = end_date #datetime.date object
@@ -23,7 +24,7 @@ class Trip(object):
         self.trip_master = None #Should be specified with Person.id
         self.people = {}
         self.description = None
-        self.destination = None
+        self.destination = destination
         self.split_table = defaultdict(int)
         self.duplicate_count = defaultdict(int) # Used incase two people have identical first and last name
         self.expense_count = defaultdict(int) #Used to give expense auto generated IDs
@@ -149,7 +150,7 @@ class Trip(object):
         people_csv_path = os.path.join(trip_path, "people.csv")
         expense_csv_path = os.path.join(trip_path, "expense.csv")
         info_dict = {k: getattr(self, k) for k in \
-                     ["start_date", "end_date", "length", "total_expense", "number_of_people", "trip_master",\
+                     ["trip_name", "start_date", "end_date", "length", "total_expense", "number_of_people", "trip_master",\
                       "description", "destination", "splite_table", "duplicate_count", "expense_count"] \
                      if getattr(self, k, None) is not None}
         if "start_date" in info_dict: info_dict["start_date"] = str(info_dict["start_date"])
@@ -187,8 +188,9 @@ class Trip(object):
     def __str__(self):
         start_date_str = str(self.start_date)
         end_date_str = str(self.end_date)
-        ret_str = start_date_str + " to " + end_date_str + "_trip"
+        ret_str = start_date_str + " to " + end_date_str + " trip"
         if self.destination: ret_str = ret_str + " to " + self.destination
         if self.number_of_people: ret_str = ret_str + " for " + str(self.number_of_people) + " people"
+        ret_str = self.trip_name + ": " + ret_str
         return ret_str
     
