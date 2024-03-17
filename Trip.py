@@ -31,20 +31,43 @@ class Trip(object):
         self.save_path = None
         self.set_date(start_date, end_date = end_date, length = length)
 
-    def add_person(self, last_name, first_name, age = None, sex = None, id = None):
+    def add_person_by_obj(self, person): #Adding a person object directly, without creating the object
+        self.people.update({person.id:person})
+        if self.trip_master is None: self.trip_master = person.id
+
+    def remove_person(self, people_id):
+        if people_id not in self.people:
+            raise PersonError("Person to be removed not in trip")
+        removed_person = self.people.pop(people_id)
+        self.duplicate_count[removed_person.last_name + "_" + removed_person.first_name] =\
+              self.duplicate_count[removed_person.last_name + "_" + removed_person.first_name] - 1
+        if self.get_number_of_people() == 0:
+            self.set_trip_master(None)
+        elif self.trip_master == people_id:
+            self.set_trip_master(next(iter(self.people)))
+
+    def add_person(self, last_name, first_name, age = None, sex = None, id = None, payment_method = None, acc_id = None, email = None, tel = None):
         if id is not None and id in self.people:
             print("Two people cannot have identical IDs, please specify unused ID")
-        if id is None: id = last_name + "_" + first_name + "_" + str(self.duplicate_count[last_name + "_" + first_name] + 1)
-        new_person = Person(last_name, first_name, age = age, sex = sex, id = id)
+        if id is None: id = self.generate_person_id(last_name, first_name)
+        self.duplicate_count[last_name + "_" + first_name] = self.duplicate_count[last_name + "_" + first_name] + 1
+        new_person = Person(last_name, first_name, age = age, sex = sex, id = id, payment_method = payment_method, email = email, acc_id = acc_id, tel = tel)
         self.people.update({id:new_person})
         self.number_of_people = self.number_of_people + 1
+        print("TM in add person: %s" % self.trip_master)
         if self.trip_master is None: self.trip_master = id
         return new_person
+    
+    def generate_person_id(self, last_name, first_name):
+        return last_name + "_" + first_name + "_" + str(self.duplicate_count[last_name + "_" + first_name] + 1)
 
     def set_trip_master(self, trip_master):
-        if trip_master not in self.people:
+        if trip_master is not None and trip_master not in self.people:
             raise PersonError("Person %s is not in this trip")
         self.trip_master = trip_master #trip master should be person's id
+
+    def get_number_of_people(self):
+        return len(self.people)
 
     def add_expense(self, value, expense_date = None, payer = None, number_of_spliters = 1, spliters = [], id = None):
         if value < 0:

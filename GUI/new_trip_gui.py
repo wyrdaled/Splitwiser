@@ -262,6 +262,7 @@ class NewTripGui(object):
                     new_trip = Trip(trip_name, start_date, end_date = end_date, destination = destination)
                 else:
                     new_trip = Trip(trip_name, start_date, length = trip_length, destination = destination)
+                new_trip.save_path = self.path_to_save
                 print(new_trip)
                 self.new_trip = new_trip
                 self.create_success = 1

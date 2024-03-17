@@ -11,6 +11,7 @@ keybind_maps = {
 THEME = "DefaultNoMoreNagging"
 sg.theme(THEME)
 from Trip import Trip
+from GUI.new_person_gui import NewPersonGui
 
 def bindkey(window, map): #TODO: This method appeaers multiple places in splitwiser, should be put into utility and import
     if not isinstance(window, sg.Window):
@@ -121,6 +122,26 @@ class TripViewer(object):
                 viewer_window.close()
                 break
 
+            if event in ("people_add_button"):
+                new_person_gui_window = NewPersonGui(self.trip)
+                status_code = new_person_gui_window.create_new_person()
+                print("STATUS CODE: %i" % status_code)
+                people_box.update(list(self.trip.people.keys()), set_to_index = self.trip.get_number_of_people() - 1)
+                trip_master_name.update(self.trip.trip_master)
+
+            if event in ("people_remove_button") and values["people_listbox"] != []:
+                selected_index = people_box.get_indexes()[0]
+                print(type(selected_index))
+                self.trip.remove_person(values["people_listbox"][0])
+                if self.trip.get_number_of_people() == 0:
+                    trip_master_name.update("")
+                else:
+                    print("SELECTED INDEX: %i" % selected_index)
+                    trip_master_name.update(self.trip.trip_master)
+                    
+                people_box.update(list(self.trip.people.keys()), set_to_index = max(selected_index - 1, 0))
+                
+
 if __name__ == "__main__":
     from Person import Person
     nm_trip = Trip("New Mexico trip", "2023-11-22", end_date = "2023-11-27")
@@ -130,6 +151,7 @@ if __name__ == "__main__":
     jc = nm_trip.add_person("Jing", "Yingze", sex = "male")
     xy = nm_trip.add_person("Zhao", "Xianyuan", sex = "male")
     xd = nm_trip.add_person("Erdong", "Lu", sex = "male", age = 28, id='wyrda')
+    #bq2 = nm_trip.add_person("Liu", "Bingqian")
     nm_trip.set_trip_master("wyrda")
 
     abq_hotel = nm_trip.add_expense(413.40, "2023-11-22")
