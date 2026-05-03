@@ -71,11 +71,12 @@ class TripViewer(object):
 
         #all objects below are for right column
         expense_table_text = sg.Text("Expenses", font = ("Times New Roman", 12), pad = 10)
-        table_header = ["ID", "Date", "Price", "location", "Payer", "Spliters"]
+        table_header = ["Date", "Price", "location", "Payer", "Spliters"]
         table_width = [5, 10, 8, 10, 8, 30]
-        expense_table = sg.Table([], col_widths = table_width, auto_size_columns = False, font = ("Times New Roman", 12),
-                                 header_font = ("Times New Roman", 12, "bold"), expand_x = True, justification = "center",
-                                 headings = table_header, enable_events = True, key = "expense_table", pad = 10)
+        expense_table = sg.Table(self.trip.get_gui_table_input(), auto_size_columns = True,
+                                 font = ("Times New Roman", 12), header_font = ("Times New Roman", 12, "bold"), expand_x = True,
+                                 justification = "center", headings = table_header, enable_events = True,
+                                 key = "expense_table", pad = 10)
         expense_remove = sg.Button("Remove", key = "expense_remove", font = ("Times New Roman", 12), pad = 10)
         expense_edit = sg.Button("Edit", key = "expense_edit_button", font = ("Times New Roman", 12), pad = 10)
         expense_add = sg.Button("Add", key = "expense_add_button", font = ("Times New Roman", 12), pad = 10)
