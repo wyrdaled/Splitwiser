@@ -201,3 +201,6 @@ class Expense(object):
     def show_split(self): #debug output function
         split_dict = self.calculate_split()
         print(split_dict)
+
+    def to_list(self):
+        return [str(self.expense_date), self.value, self.location, self.payer, self.spliters]

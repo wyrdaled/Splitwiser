@@ -124,6 +124,12 @@ class Trip(object):
     def add_destination(self, destination):
         self.destination = destination
 
+    def get_gui_table_input(self):
+        gui_table_input = []
+        for e in self.expenses.values():
+            gui_table_input.append(e.to_list())
+        return gui_table_input
+
     def show_split(self):
         self.calculate_trip_split()
         print(self.split_table)
